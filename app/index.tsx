@@ -1,20 +1,6 @@
-import { StyleSheet, Text, View } from "react-native";
+import ChatScreen from "@/screens/ChatScreen";
+import React from "react";
 
 export default function Index() {
-	return (
-		<View style={styles.container}>
-			<Text style={styles.welcome_text}>welcome</Text>
-		</View>
-	);
+	return <ChatScreen />;
 }
-
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		justifyContent: "center",
-		alignItems: "center",
-	},
-	welcome_text: {
-		fontSize: 15,
-	},
-});
