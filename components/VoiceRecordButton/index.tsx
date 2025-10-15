@@ -1,4 +1,4 @@
-import { Audio } from "expo-av";
+import { AudioModule } from "expo-audio";
 import React, { useRef, useState } from "react";
 import {
 	Alert,
@@ -15,9 +15,9 @@ const VoiceRecordButton = () => {
 
 	const requestMicrophonePermission = async () => {
 		try {
-			const { status } = await Audio.requestPermissionsAsync();
+			const { granted } = await AudioModule.requestRecordingPermissionsAsync();
 
-			if (status === "granted") {
+			if (granted) {
 				console.log("✅ Microphone permission granted");
 				setHasPermission(true);
 				// await startRecording();

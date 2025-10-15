@@ -28,9 +28,9 @@
     "plugins": [
       "expo-router",
       [
-        "expo-av",
+        "expo-audio",
         {
-          "microphonePermission": "Allow AI Language Tutot to access your microphone for recording audio."
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone."
         }
       ],
       [
