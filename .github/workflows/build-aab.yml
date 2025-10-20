@@ -1,0 +1,76 @@
+name: Build Android AAB
+
+on:
+  workflow_dispatch:
+  push:
+    branches: 
+      - main
+      - master
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+      
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      
+      - name: Create google-services.json
+        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > google-services.json
+      
+      - name: Create keystore file
+        run: |
+          echo "${{ secrets.KEYSTORE_FILE }}" | base64 --decode > android/app/upload-keystore.jks
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
+      
+      - name: Force clean prebuild
+        run: |
+          rm -rf android
+          rm -rf ios
+          npx expo prebuild --platform android --clean
+      
+      - name: Build AAB with EAS
+        run: eas build --platform android --profile production --local
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          UPLOAD_STORE_FILE: upload-keystore.jks
+          UPLOAD_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          UPLOAD_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          UPLOAD_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      
+      - name: Find AAB file location
+        run: |
+          echo "Searching for all .aab files:"
+          find . -name "*.aab" -type f -exec ls -la {} \;
+          echo ""
+          echo "Checking EAS build output locations:"
+          ls -la /tmp/runner/eas-build-local-nodejs/ 2>/dev/null || echo "EAS temp dir not found"
+          find /tmp -name "*.aab" -type f 2>/dev/null || echo "No AAB in /tmp"
+      - name: Upload AAB as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-aab
+          path: "**/*.aab"
+          retention-days: 30
+          if-no-files-found: error
+            
