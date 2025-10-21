@@ -64,5 +64,6 @@ export const useVoiceRecording = () => {
 		requestMicrophonePermission,
 		startRecording,
 		stopRecording,
+		setIsRecording,
 	};
 };

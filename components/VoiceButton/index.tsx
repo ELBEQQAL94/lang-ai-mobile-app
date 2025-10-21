@@ -285,8 +285,7 @@
 // });
 
 import React from "react";
-import { Animated, StyleSheet, Text } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { Animated, Pressable, StyleSheet } from "react-native";
 
 interface VoiceButtonProps {
 	scaleAnim: Animated.Value;
@@ -305,19 +304,6 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
 	onPressIn,
 	onPressOut,
 }) => {
-	const longPressGesture = Gesture.LongPress()
-		.minDuration(0)
-		.onStart(() => {
-			if (!isProcessing && !isPlaying) {
-				onPressIn();
-			}
-		})
-		.onEnd(() => {
-			if (isRecording) {
-				onPressOut();
-			}
-		});
-
 	return (
 		<Animated.View
 			style={[
@@ -327,7 +313,7 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
 				},
 			]}
 		>
-			<GestureDetector gesture={longPressGesture}>
+			<Pressable onPressIn={onPressIn} onPressOut={onPressOut}>
 				<Animated.View
 					style={[
 						styles.voiceButton,
@@ -335,12 +321,8 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
 						isPlaying && styles.voiceButtonPlaying,
 						(isProcessing || isPlaying) && styles.voiceButtonDisabled,
 					]}
-				>
-					{isRecording && (
-						<Text style={styles.recordingText}>Recording...</Text>
-					)}
-				</Animated.View>
-			</GestureDetector>
+				></Animated.View>
+			</Pressable>
 		</Animated.View>
 	);
 };

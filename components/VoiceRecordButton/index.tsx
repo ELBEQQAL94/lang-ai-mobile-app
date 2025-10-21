@@ -5,7 +5,6 @@ import { useVoiceRecording } from "@/hooks/useVoiceRecording";
 import { setAudioModeAsync } from "expo-audio";
 import React, { useEffect, useRef, useState } from "react";
 import { Alert, Animated, StyleSheet, View } from "react-native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { PulseRing } from "../PulseRing";
 import { VoiceButton } from "../VoiceButton";
 
@@ -43,7 +42,9 @@ const VoiceRecordButton = () => {
 			setIsProcessing(true);
 
 			const transcribedText = await speechToText(audioUri);
+
 			const aiResponse = await getChatResponse(transcribedText);
+
 			const audioBase64 = await textToSpeech(aiResponse);
 
 			await playAudio(audioBase64);
@@ -62,73 +63,60 @@ const VoiceRecordButton = () => {
 		}
 	};
 
-	// const handleStopRecording = async () => {
-	// 	const uri = await stopRecording();
-	// 	if (uri) {
-	// 		await processVoiceConversation(uri);
-	// 	}
-	// };
-
-	// const handlePress = async () => {
-	// 	if (!hasPermission) {
-	// 		await requestMicrophonePermission();
-	// 		return;
-	// 	}
-
-	// 	await setAudioModeAsync({
-	// 		playsInSilentMode: true,
-	// 		allowsRecording: true,
-	// 	});
-
-	// 	if (!isRecording && !isProcessing && !isPlaying) {
-	// 		await startRecording();
-	// 	} else if (isRecording) {
-	// 		await handleStopRecording();
-	// 	}
-	// };
 	const handlePressIn = async () => {
-		if (!hasPermission) {
-			await requestMicrophonePermission();
-			return;
+		try {
+			if (!hasPermission) {
+				const granted = await requestMicrophonePermission();
+				if (!granted) {
+					return;
+				}
+			}
+
+			await setAudioModeAsync({
+				playsInSilentMode: true,
+				allowsRecording: true,
+			});
+
+			await startRecording();
+		} catch (error) {
+			console.error("Error in handlePressIn:", error);
+			Alert.alert("Error", "Failed to start recording");
 		}
-
-		await setAudioModeAsync({
-			playsInSilentMode: true,
-			allowsRecording: true,
-		});
-
-		// Start recording when finger touches the button
-		await startRecording();
 	};
 
 	const handlePressOut = async () => {
-		// Stop recording when finger leaves the button
-		if (isRecording) {
+		try {
+			if (!isRecording) {
+				return;
+			}
+
 			const uri = await stopRecording();
+
 			if (uri) {
 				await processVoiceConversation(uri);
+			} else {
+				Alert.alert("Error", "No audio was recorded");
 			}
+		} catch (error) {
+			console.error("Error in handlePressOut:", error);
+			Alert.alert("Error", "Failed to stop recording");
+			setIsProcessing(false);
 		}
 	};
 
 	return (
 		<View style={styles.container}>
 			{isRecording && <PulseRing pulseAnim={recordingPulseAnim} />}
-
 			{isPlaying && <PulseRing pulseAnim={playingPulseAnim} isPlaying />}
 
-			{!isRecording && (
-				<GestureHandlerRootView style={styles.container}>
-					<VoiceButton
-						scaleAnim={scaleAnim}
-						isRecording={isRecording}
-						isPlaying={isPlaying}
-						isProcessing={isProcessing}
-						onPressIn={handlePressIn}
-						onPressOut={handlePressOut}
-					/>
-				</GestureHandlerRootView>
-			)}
+			<VoiceButton
+				scaleAnim={scaleAnim}
+				isRecording={isRecording}
+				isPlaying={isPlaying}
+				isProcessing={isProcessing}
+				onPressIn={handlePressIn}
+				onPressOut={handlePressOut}
+			/>
 		</View>
 	);
 };
