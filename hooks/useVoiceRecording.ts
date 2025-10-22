@@ -52,8 +52,10 @@ export const useVoiceRecording = () => {
 			return uri;
 		} catch (err) {
 			console.error("Failed to stop recording:", err);
-			Alert.alert("Error", "Failed to stop recording");
-			throw err;
+			Alert.alert(
+				"Recording Issue",
+				"Oops! Something went wrong while stopping the recording. Please try again."
+			);
 		}
 	};
 

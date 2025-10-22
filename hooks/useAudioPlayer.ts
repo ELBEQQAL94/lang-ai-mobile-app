@@ -27,8 +27,10 @@ export const useVoicePlayer = (audioSource: string | null) => {
 			player.play();
 		} catch (error) {
 			console.error("Audio playback error:", error);
-			Alert.alert("Error", "Failed to play audio");
-			throw error;
+			Alert.alert(
+				"Playback Issue",
+				"Oops! We ran into a problem playing the audio. Please try again in a moment."
+			);
 		}
 	};
 

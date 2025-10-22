@@ -1,3 +1,6 @@
+import { AudioFile } from "@/types/audio";
+import axios from "axios";
+
 export const useVoiceAPI = () => {
 	const speechToText = async (audioUri: string) => {
 		try {
@@ -15,76 +18,62 @@ export const useVoiceAPI = () => {
 			const mimeType = mimeTypes[fileExtension] || "audio/m4a";
 
 			const formData = new FormData();
-			formData.append("file", {
+
+			const audioFile: AudioFile = {
 				uri: audioUri,
 				type: mimeType,
 				name: `audio.${fileExtension}`,
-			} as any);
+			};
+
+			formData.append("file", audioFile as unknown as Blob);
 			formData.append("model", "whisper-1");
 
-			const result = await fetch(
-				"https://api.openai.com/v1/audio/transcriptions",
+			const result = await axios.post(
+				process.env.EXPO_PUBLIC_OPENAI_TRANSCRIPTION_URL!,
+				formData,
 				{
-					method: "POST",
 					headers: {
 						Authorization: `Bearer ${process.env.EXPO_PUBLIC_OPENAI_API_KEY}`,
+						"Content-Type": "multipart/form-data",
 					},
-					body: formData,
 				}
 			);
 
-			const responseText = await result.text();
-
-			if (!result.ok) {
-				throw new Error(`API error: ${result.status} - ${responseText}`);
-			}
-
-			const data = JSON.parse(responseText);
-			return data.text;
+			return result.data.text;
 		} catch (error) {
 			console.error("Speech to text error:", error);
-			throw error;
 		}
 	};
 
 	const getChatResponse = async (userMessage: string) => {
 		try {
-			const response = await fetch(
-				"https://api.openai.com/v1/chat/completions",
+			const response = await axios.post(
+				process.env.EXPO_PUBLIC_OPENAI_CHAT_URL!,
 				{
-					method: "POST",
+					model: "gpt-4",
+					messages: [
+						{
+							role: "system",
+							content: "You are a helpful assistant.",
+						},
+						{
+							role: "user",
+							content: userMessage,
+						},
+					],
+					temperature: 0.7,
+				},
+				{
 					headers: {
 						Authorization: `Bearer ${process.env.EXPO_PUBLIC_OPENAI_API_KEY}`,
 						"Content-Type": "application/json",
 					},
-					body: JSON.stringify({
-						model: "gpt-4",
-						messages: [
-							{
-								role: "system",
-								content: "You are a helpful assistant.",
-							},
-							{
-								role: "user",
-								content: userMessage,
-							},
-						],
-						temperature: 0.7,
-					}),
 				}
 			);
 
-			const responseText = await response.text();
-
-			if (!response.ok) {
-				throw new Error(`Chat API error: ${response.status} - ${responseText}`);
-			}
-
-			const data = JSON.parse(responseText);
-			return data.choices[0].message.content;
+			return response.data.choices[0].message.content;
 		} catch (error) {
 			console.error("Chat error:", error);
-			throw error;
 		}
 	};
 
@@ -92,34 +81,29 @@ export const useVoiceAPI = () => {
 		try {
 			const voiceId = process.env.EXPO_PUBLIC_ELEVENLABS_VOICE_ID!;
 
-			const response = await fetch(
-				`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+			const response = await axios.post(
+				`${process.env.EXPO_PUBLIC_TEXT_TO_SPEACH_URL!}/${voiceId}`,
 				{
-					method: "POST",
+					text: text,
+					model_id: "eleven_monolingual_v1",
+					voice_settings: {
+						stability: 0.5,
+						similarity_boost: 0.5,
+						speed: 1.04,
+					},
+				},
+				{
 					headers: {
 						Accept: "audio/mpeg",
 						"Content-Type": "application/json",
 						"xi-api-key": process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY!,
 					},
-					body: JSON.stringify({
-						text: text,
-						model_id: "eleven_monolingual_v1",
-						voice_settings: {
-							stability: 0.5,
-							similarity_boost: 0.5,
-						},
-					}),
+					responseType: "arraybuffer",
 				}
 			);
 
-			if (!response.ok) {
-				const errorText = await response.text();
-				throw new Error(`TTS API error: ${response.status} - ${errorText}`);
-			}
-
-			const arrayBuffer = await response.arrayBuffer();
 			const base64Audio = btoa(
-				new Uint8Array(arrayBuffer).reduce(
+				new Uint8Array(response.data).reduce(
 					(data, byte) => data + String.fromCharCode(byte),
 					""
 				)
@@ -128,7 +112,6 @@ export const useVoiceAPI = () => {
 			return base64Audio;
 		} catch (error) {
 			console.error("Text to speech error:", error);
-			throw error;
 		}
 	};
 

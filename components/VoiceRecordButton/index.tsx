@@ -47,7 +47,7 @@ const VoiceRecordButton = () => {
 
 			const audioBase64 = await textToSpeech(aiResponse);
 
-			await playAudio(audioBase64);
+			await playAudio(audioBase64!);
 
 			setIsProcessing(false);
 
